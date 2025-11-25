@@ -1,6 +1,27 @@
 # WireGuard & Tailscale Quickstart (Ubuntu)
 
-This repo documents a minimal, repeatable way to bring up a private network on Ubuntu using either **WireGuard** (self-hosted) or **Tailscale** (managed control plane on top of WireGuard). Both sections assume you have sudo access.
+This repo documents a minimal, repeatable way to bring up a private network on Ubuntu using either **WireGuard** (self-hosted) or **Tailscale** (managed control plane on top of WireGuard). Both sections assume you have sudo access. Two ready-to-run scripts are included for quick deployment on a fresh Ubuntu host.
+
+## One-command bootstrap scripts (Ubuntu)
+
+| Script | Purpose |
+| --- | --- |
+| `sudo ./scripts/wg-quickstart.sh` | Installs WireGuard, generates keys, writes `/etc/wireguard/wg0.conf`, enables NAT if you set `WG_WAN_IFACE`, and starts `wg-quick@wg0`. A ready-to-import client example is saved to `/etc/wireguard/client-example.conf`. |
+| `sudo TS_AUTHKEY=<ts-key> TS_ADVERTISE_ROUTES=192.168.1.0/24 ./scripts/tailscale-quickstart.sh` | Installs Tailscale (if missing) and brings the node online with SSH enabled. Optional env vars advertise routes or an exit node. |
+
+### WireGuard script knobs
+- `WG_SERVER_ADDR` (default `10.6.0.1/24`): server interface address
+- `WG_CLIENT_ADDR` (default `10.6.0.2/32`): peer address allowed on the server
+- `WG_CLIENT_INTERFACE_ADDR` (default `10.6.0.2/24`): address placed in the client example
+- `WG_CLIENT_ALLOWED` (default `0.0.0.0/0, ::/0`): routes the client sends to the tunnel
+- `WG_WAN_IFACE` (optional): outbound NIC for MASQUERADE (e.g., `eth0`); omit for LAN-only
+- `WG_ENDPOINT` (default `<server-public-ip>:51820`): client example endpoint
+
+### Tailscale script knobs
+- `TS_AUTHKEY`: auth key to skip browser login (otherwise the command prints a login URL)
+- `TS_ADVERTISE_ROUTES`: comma-separated CIDRs to export as subnet routes
+- `TS_ADVERTISE_EXIT=1`: mark this node as an exit node
+- `TS_ADVERTISE_ROUTES` and `TS_ADVERTISE_EXIT` can be combined; approve routes in the Tailscale admin console.
 
 ## WireGuard: fully self-hosted
 
