@@ -11,6 +11,7 @@ if ! command -v tailscale >/dev/null 2>&1; then
 fi
 
 TS_ARGS=(--ssh)
+TS_UP=${TS_UP:-1}
 if [[ -n "${TS_AUTHKEY:-}" ]]; then
   TS_ARGS+=("--authkey=${TS_AUTHKEY}")
 fi
@@ -21,11 +22,15 @@ if [[ "${TS_ADVERTISE_EXIT:-0}" == "1" ]]; then
   TS_ARGS+=("--advertise-exit-node")
 fi
 
-# Bring the node online. If no authkey is provided, this will print a URL
-# for you to open in a browser to authenticate.
-tailscale up "${TS_ARGS[@]}"
+if [[ "${TS_UP}" == "1" ]]; then
+  # Bring the node online. If no authkey is provided, this will print a URL
+  # for you to open in a browser to authenticate.
+  tailscale up "${TS_ARGS[@]}"
 
-tailscale status
-tailscale ip -4
+  tailscale status
+  tailscale ip -4
 
-echo "Tailscale is up. Manage ACLs and routes from the admin console."
+  echo "Tailscale is up. Manage ACLs and routes from the admin console."
+else
+  echo "tailscale installed. Skipping tailscale up (TS_UP=${TS_UP})."
+fi

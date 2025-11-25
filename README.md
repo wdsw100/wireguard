@@ -6,8 +6,8 @@ This repo documents a minimal, repeatable way to bring up a private network on U
 
 | Script | Purpose |
 | --- | --- |
-| `sudo ./scripts/wg-quickstart.sh` | Installs WireGuard, generates keys, writes `/etc/wireguard/wg0.conf`, enables NAT if you set `WG_WAN_IFACE`, and starts `wg-quick@wg0`. A ready-to-import client example is saved to `/etc/wireguard/client-example.conf`. |
-| `sudo TS_AUTHKEY=<ts-key> TS_ADVERTISE_ROUTES=192.168.1.0/24 ./scripts/tailscale-quickstart.sh` | Installs Tailscale (if missing) and brings the node online with SSH enabled. Optional env vars advertise routes or an exit node. |
+| `sudo ./scripts/wg-quickstart.sh` | Installs WireGuard, generates keys, writes `/etc/wireguard/wg0.conf`, enables NAT if you set `WG_WAN_IFACE`, and starts `wg-quick@wg0` (or `wg-quick up` when systemd is absent). A ready-to-import client example is saved to `/etc/wireguard/client-example.conf`. |
+| `sudo TS_AUTHKEY=<ts-key> TS_ADVERTISE_ROUTES=192.168.1.0/24 ./scripts/tailscale-quickstart.sh` | Installs Tailscale (if missing) and brings the node online with SSH enabled. Optional env vars advertise routes or an exit node. Use `TS_UP=0` to install only (useful for headless tests/CI). |
 
 ### WireGuard script knobs
 - `WG_SERVER_ADDR` (default `10.6.0.1/24`): server interface address
@@ -16,11 +16,13 @@ This repo documents a minimal, repeatable way to bring up a private network on U
 - `WG_CLIENT_ALLOWED` (default `0.0.0.0/0, ::/0`): routes the client sends to the tunnel
 - `WG_WAN_IFACE` (optional): outbound NIC for MASQUERADE (e.g., `eth0`); omit for LAN-only
 - `WG_ENDPOINT` (default `<server-public-ip>:51820`): client example endpoint
+- `WG_START_METHOD` (default `auto`): `auto` (systemd when available, otherwise `wg-quick up`), `systemd`, `wg-quick`, or `none`
 
 ### Tailscale script knobs
 - `TS_AUTHKEY`: auth key to skip browser login (otherwise the command prints a login URL)
 - `TS_ADVERTISE_ROUTES`: comma-separated CIDRs to export as subnet routes
 - `TS_ADVERTISE_EXIT=1`: mark this node as an exit node
+- `TS_UP=0`: install only; skip `tailscale up` (helpful when interactive auth is unavailable)
 - `TS_ADVERTISE_ROUTES` and `TS_ADVERTISE_EXIT` can be combined; approve routes in the Tailscale admin console.
 
 ## WireGuard: fully self-hosted
@@ -126,5 +128,7 @@ Manage ACLs, SSH, and tags from the Tailscale admin console. No port forwarding 
 - If WireGuard peers do not connect, re-check that UDP 51820 is reachable and that `AllowedIPs` match your planned topology.
 - If traffic reaches the server but not the internet, confirm the MASQUERADE rule targets the correct outbound interface and
   that `net.ipv4.ip_forward` is set to 1 (`sudo sysctl net.ipv4.ip_forward`).
+- If the WireGuard script reports missing kernel support, install `wireguard-dkms` or upgrade to a kernel with built-in WireGuard
+  before bringing the interface up.
 - If Tailscale subnet routing fails, verify the route is approved in the admin console and that the host can reach the LAN network.
 - For either tool, check `journalctl -u wg-quick@wg0` or `sudo tailscale bugreport` for more detail.
